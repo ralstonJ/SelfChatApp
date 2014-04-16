@@ -4,18 +4,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
  
 	<link rel="stylesheet" href="bootstrap/css/bootstrap.css"  type="text/css" /> 
-	<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css"  type="text/css" /> 
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css"  type="text/css" />	
 	<style>
 	 .hidden
 		{
 			display: none;
 		}
+		
+	.alert
+		{
+			width: 350px;
+		}
 	</style>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>	
 </head>
 <body>
-    
-
+    <div class="navbar">
+		<div class="navbar-inner">
+			<div class="container">
+				<h2> Welcome to your personal Self Chat App !! </h2>
+			</div>
+		</div>
+	</div>	
 	<p> Enter First Participant name: </p>	<input  id="txt_Fname" type="text" placeholder="Enter name …"> </input>
 	<button class="btn" id="btn_start_Fname">Start Session of 1st Participant</button> <span id="tmr_Fname">  </span> 
 			
@@ -34,7 +44,32 @@
 	<span id="span_unsupported" class="hidden">Google speech API not supported. Please load page in chrome.</span>
  
 	<script>
-		$(document).ready(function(){
+		$(document).ready(function(){		
+			
+			/*
+			*	lblNotify() sets the label "#tmr_Fname" or "#tmr_Sname" to "green"  or  "red" 
+			*
+			*	@param idImp : take element "#tmr_Fname" or "#tmr_Sname"
+			*	@param idScs : take element "#tmr_Fname" or "#tmr_Sname"
+			*/	
+			function lblNotify(idImp, idScs){
+						editNotify(idImp,"label label-important", "Wait Now");
+						editNotify(idScs,"label label-success", "Speak Now");
+			}
+			
+			/*
+			*	editNotify()  empty the element, set clss attribute and display appropriate message 
+			*
+			*	@param lblObj: get appropriate span object
+			*	@param lblClass : get respective bootstarp class for label
+			*	@param lblMessage : get appropriate message to display on label
+			*/
+			function editNotify(lblObj, lblClass, lblMessage){
+						$(lblObj).empty();
+						$(lblObj).attr("class",lblClass);
+						$(lblObj).append(lblMessage);
+			}
+			
 			window.SpeechRecognition = window.SpeechRecognition       ||
                                window.webkitSpeechRecognition ||
                                null;
@@ -61,36 +96,25 @@
 								if (event.results[i].isFinal) {
 								var username;	
 								if(cnt%2 == 0) { 
-										$("#tmr_Fname").empty();
-										$("#tmr_Fname").attr("class","label label-important");
-										$("#tmr_Fname").append("Wait Now");
-											
-					
-										$("#tmr_Sname").empty();
-										$("#tmr_Sname").attr("class","label label-success");
-										$("#tmr_Sname").append("Speak Now");
-										
+										//Set green to tmr_Fname, red to tmr_Sname
+										lblNotify("#tmr_Fname","#tmr_Sname");
+								
 										username = $("#txt_Fname").val(); 
 										// set to user 2
 										cnt = 1;
 								} else {
-										$("#tmr_Sname").empty();
-										$("#tmr_Sname").attr("class","label label-important");
-										$("#tmr_Sname").append("Wait Now");
-										
-										$("#tmr_Fname").empty();
-										$("#tmr_Fname").attr("class","label label-success");
-										$("#tmr_Fname").append("Speak Now");
+										//Set green to tmr_Sname, red to tmr_Fname
+										lblNotify("#tmr_Sname","#tmr_Fname");
 										
 										username = $("#txt_Sname").val();
 										//set to user 1
 										cnt = 0;
 									}
 								// Confindence level " predicts with Confidence: " + event.results[i][0].confidence
-								$("#divLogInfo").append("<p> " + username + " says " + event.results[i][0].transcript  + "</p>");
+								$("#divLogInfo").append("<div class='alert alert-warning'><strong> " + username + " : </strong> " + event.results[i][0].transcript  + "</div>");
 								
 								} else {
-								$("#divLogInfo").append(event.results[i][0].transcript);
+									$("#divLogInfo").append(event.results[i][0].transcript);
 								}
 								console.log("Voice detected.");
 							}
@@ -102,43 +126,49 @@
 						};
 		
 						//Listener on click to btn_start_Fname
-						$("#btn_start_Fname").click(function(){
-							var name = $("#txt_Fname").val();
+						$('button').click(function(){
+						
+							//get id of element: fname or sname
+							var name = $(this).attr('id');
+							name = name.substring(10,15);
+						
+							// display name
+							var uName = $("#txt_" + name).val();
+								
+							//validate respective textbox
+							if(!$("#txt_" + name).val()){
+								editNotify("#tmr_" + name, "label label-warning", "Please Enter Name of participant");
+								return;
+							}
 							
-							$("#divLogInfo").append("<p>" + name +" has joined the conversation.... </p>");
+							// Participant Successfully Added
+							$("#divLogInfo").append("<div class='alert alert-success'> <strong>" + uName +" </strong>  has joined the conversation.... </div>");
+							console.log("Call: " + $(this).attr('id'));	
+
+							// Disable Textbox and button
+							$(this).attr("disabled", true);
+							$("#txt_" + name).attr("disabled", true);
+							console.log("Button object  : txt_start_" + name);	
+							console.log("Session started for user: " + uName);	
 							
-							// btn_start_Fname & txt_fname are disabled.
-							$("#btn_start_Fname").attr("disabled", true);
-							$("#txt_Fname").attr("disabled", true);
-							
-							// Warning displayed on first participant added.
-							$("#tmr_Fname").append("Wait for 2nd participant");
-							$("#tmr_Fname").attr("class","label label-warning");
-							
-							try {
-								//Start recognizer: recignize user voice now.
-								recognizer.start();
-								log.innerHTML = 'Recognition started' + '<br />' + log.innerHTML;
-							} catch(ex) {
-								log.innerHTML = 'Recognition error: ' + ex.message + '<br />' + log.innerHTML;
+							if (name == "Fname") {
+								// Warning displayed when first participant added.
+								editNotify("#tmr_" + name, "label label-warning", "Wait for 2nd participant");
+						
+								// Start Conversation
+								try {
+									//Start recognizer: recignize user voice now.
+									recognizer.start();
+									log.innerHTML = 'Recognition started' + '<br />' + log.innerHTML;
+								} catch(ex) {
+									log.innerHTML = 'Recognition error: ' + ex.message + '<br />' + log.innerHTML;
+								}
+							} else {
+								//Set green to tmr_Fname, red to tmr_Sname
+								lblNotify("#tmr_Sname","#tmr_Fname");
 							}
 						});
 						
-						$("#btn_start_Sname").click(function(){
-							var name = $("#txt_Sname").val();
-							$("#divLogInfo").append("<p>" + name +" has joined the conversation.... </p>");
-							
-							$("#btn_start_Sname").attr("disabled", true);
-							$("#txt_Sname").attr("disabled", true);
-							$("#divLogInfo").append("<p>" + $("#txt_Fname").val() +" say something.... </p>");
-							
-							$("#tmr_Sname").append("Wait Now");
-							$("#tmr_Sname").attr("class","label label-important");
-							
-							$("#tmr_Fname").empty();
-							$("#tmr_Fname").attr("class","label label-success");
-							$("#tmr_Fname").append("Speak Now");
-						});
 
 						document.getElementById('btn_stop').addEventListener('click', function() {
 						recognizer.stop();
@@ -150,6 +180,8 @@
 						log.textContent = '';
 						});
 					}
+					
+					
 		});
 	</script>
 			
