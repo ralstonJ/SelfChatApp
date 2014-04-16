@@ -1,0 +1,160 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ 
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.css"  type="text/css" /> 
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css"  type="text/css" /> 
+	<style>
+	 .hidden
+		{
+			display: none;
+		}
+	</style>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>	
+</head>
+<body>
+    
+
+	<p> Enter First Participant name: </p>	<input  id="txt_Fname" type="text" placeholder="Enter name …"> </input>
+	<button class="btn" id="btn_start_Fname">Start Session of 1st Participant</button> <span id="tmr_Fname">  </span> 
+			
+	<p> Enter Second Participant name: </p> <input  id="txt_Sname" type="text" placeholder="Enter name …"> </input>
+	<button class="btn" id="btn_start_Sname">Start Session of 2nd Participant</button> <span id="tmr_Sname"></span> 
+	
+	<h3>Conversation :</h3>			
+	<p id="divLogInfo"><p>
+
+	<h3>Log</h3>
+    <p id="log"> </p>
+	
+	<button class="btn" id="btn_stop" >Stop Speech Api</button>
+    <button class="btn" id="btn_clear">Clear All</button>
+	
+	<span id="span_unsupported" class="hidden">Google speech API not supported. Please load page in chrome.</span>
+ 
+	<script>
+		$(document).ready(function(){
+			window.SpeechRecognition = window.SpeechRecognition       ||
+                               window.webkitSpeechRecognition ||
+                               null;
+ 
+				  if (window.SpeechRecognition === null) {
+					document.getElementById('span_unsupported').classList.remove('hidden');
+					document.getElementById('btn_start_Fname').setAttribute('disabled', 'disabled');
+					document.getElementById('btn_start_Sname').setAttribute('disabled', 'disabled');
+					document.getElementById('btn_stop').setAttribute('disabled', 'disabled');
+				  } else {
+			 
+						var recognizer = new window.SpeechRecognition();
+		
+						// Recogniser is set to detect user's voice continously
+						recognizer.continuous = true;
+					
+						// A counter to track if user 1/2.	
+						var cnt = 0;		
+					
+						// Start recognising
+						recognizer.onresult = function(event) {
+							for (var i = event.resultIndex; i < event.results.length; i++) {
+								
+								if (event.results[i].isFinal) {
+								var username;	
+								if(cnt%2 == 0) { 
+										$("#tmr_Fname").empty();
+										$("#tmr_Fname").attr("class","label label-important");
+										$("#tmr_Fname").append("Wait Now");
+											
+					
+										$("#tmr_Sname").empty();
+										$("#tmr_Sname").attr("class","label label-success");
+										$("#tmr_Sname").append("Speak Now");
+										
+										username = $("#txt_Fname").val(); 
+										// set to user 2
+										cnt = 1;
+								} else {
+										$("#tmr_Sname").empty();
+										$("#tmr_Sname").attr("class","label label-important");
+										$("#tmr_Sname").append("Wait Now");
+										
+										$("#tmr_Fname").empty();
+										$("#tmr_Fname").attr("class","label label-success");
+										$("#tmr_Fname").append("Speak Now");
+										
+										username = $("#txt_Sname").val();
+										//set to user 1
+										cnt = 0;
+									}
+								// Confindence level " predicts with Confidence: " + event.results[i][0].confidence
+								$("#divLogInfo").append("<p> " + username + " says " + event.results[i][0].transcript  + "</p>");
+								
+								} else {
+								$("#divLogInfo").append(event.results[i][0].transcript);
+								}
+								console.log("Voice detected.");
+							}
+						};
+					
+						// Listen for errors
+						recognizer.onerror = function(event) {
+						log.innerHTML = 'Recognition error: ' + event.message + '<br />' + log.innerHTML;
+						};
+		
+						//Listener on click to btn_start_Fname
+						$("#btn_start_Fname").click(function(){
+							var name = $("#txt_Fname").val();
+							
+							$("#divLogInfo").append("<p>" + name +" has joined the conversation.... </p>");
+							
+							// btn_start_Fname & txt_fname are disabled.
+							$("#btn_start_Fname").attr("disabled", true);
+							$("#txt_Fname").attr("disabled", true);
+							
+							// Warning displayed on first participant added.
+							$("#tmr_Fname").append("Wait for 2nd participant");
+							$("#tmr_Fname").attr("class","label label-warning");
+							
+							try {
+								//Start recognizer: recignize user voice now.
+								recognizer.start();
+								log.innerHTML = 'Recognition started' + '<br />' + log.innerHTML;
+							} catch(ex) {
+								log.innerHTML = 'Recognition error: ' + ex.message + '<br />' + log.innerHTML;
+							}
+						});
+						
+						$("#btn_start_Sname").click(function(){
+							var name = $("#txt_Sname").val();
+							$("#divLogInfo").append("<p>" + name +" has joined the conversation.... </p>");
+							
+							$("#btn_start_Sname").attr("disabled", true);
+							$("#txt_Sname").attr("disabled", true);
+							$("#divLogInfo").append("<p>" + $("#txt_Fname").val() +" say something.... </p>");
+							
+							$("#tmr_Sname").append("Wait Now");
+							$("#tmr_Sname").attr("class","label label-important");
+							
+							$("#tmr_Fname").empty();
+							$("#tmr_Fname").attr("class","label label-success");
+							$("#tmr_Fname").append("Speak Now");
+						});
+
+						document.getElementById('btn_stop').addEventListener('click', function() {
+						recognizer.stop();
+						log.innerHTML = 'Recognition stopped' + '<br />' + log.innerHTML;
+						});
+					
+						document.getElementById('btn_clear').addEventListener('click', function() {
+						$("#divLogInfo").empty();
+						log.textContent = '';
+						});
+					}
+		});
+	</script>
+			
+			
+
+</body>
+
+</html>
