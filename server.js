@@ -11,6 +11,7 @@ var path = require('path');
 var socketio = require('socket.io');
 var app = express();
 
+
 // all environments
 app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
@@ -49,3 +50,4 @@ socketio.listen(server).on('connection', function (socket) {
 	});
 
 });
+app.listen(process.env.port || 2455);
