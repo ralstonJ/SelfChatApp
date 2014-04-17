@@ -3,8 +3,8 @@
 	<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
  
-	<link rel="stylesheet" href="bootstrap/css/bootstrap.css"  type="text/css" /> 
-	<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css"  type="text/css" />	
+	<link rel="stylesheet" href="./node_modules/bootstrap/css/bootstrap.css"  type="text/css" /> 
+	<link rel="stylesheet" href="./node_modules/bootstrap/css/bootstrap.min.css"  type="text/css" />	
 	<style>
 	 .hidden
 		{
@@ -17,6 +17,7 @@
 		}
 	</style>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>	
+	<script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="navbar">
@@ -26,11 +27,13 @@
 			</div>
 		</div>
 	</div>	
-	<p> Enter First Participant name: </p>	<input  id="txt_Fname" type="text" placeholder="Enter name …"> </input>
+	<p> Enter First Participant name: </p>	<input  id="txt_Fname" type="text" placeholder="Enter name "> </input>
 	<button class="btn" id="btn_start_Fname">Start Session of 1st Participant</button> <span id="tmr_Fname">  </span> 
-			
-	<p> Enter Second Participant name: </p> <input  id="txt_Sname" type="text" placeholder="Enter name …"> </input>
+	
+	<!--	
+	<p> Enter Second Participant name: </p> <input  id="txt_Sname" type="text" placeholder="Enter name "> </input>
 	<button class="btn" id="btn_start_Sname">Start Session of 2nd Participant</button> <span id="tmr_Sname"></span> 
+	-->
 	
 	<h3>Conversation :</h3>			
 	<p id="divLogInfo"><p>
@@ -85,36 +88,35 @@
 		
 						// Recogniser is set to detect user's voice continously
 						recognizer.continuous = true;
+						
+						var iosocket = io.connect();
+
+						iosocket.on('connect', function () {
+							$('#divLogInfo').append($('<p>Connected</p>'));
 					
-						// A counter to track if user 1/2.	
-						var cnt = 0;		
-					
+							iosocket.on('message', function(message) {
+								$('#divLogInfo').append('<p>' + message + '</p>');
+							});
+			
+							iosocket.on('disconnect', function() {
+								$('#divLogInfo').append('<p>Disconnected</p>');
+							});
+						});
+						
 						// Start recognising
 						recognizer.onresult = function(event) {
 							for (var i = event.resultIndex; i < event.results.length; i++) {
 								
 								if (event.results[i].isFinal) {
-								var username;	
-								if(cnt%2 == 0) { 
-										//Set green to tmr_Fname, red to tmr_Sname
-										lblNotify("#tmr_Fname","#tmr_Sname");
-								
-										username = $("#txt_Fname").val(); 
-										// set to user 2
-										cnt = 1;
-								} else {
-										//Set green to tmr_Sname, red to tmr_Fname
-										lblNotify("#tmr_Sname","#tmr_Fname");
-										
-										username = $("#txt_Sname").val();
-										//set to user 1
-										cnt = 0;
-									}
+								var username = $("#txt_Fname").val()
+	
 								// Confindence level " predicts with Confidence: " + event.results[i][0].confidence
+								iosocket.send("<div class='alert alert-warning'><strong> " + username + " : </strong> " + event.results[i][0].transcript  + "</div>");
+
 								$("#divLogInfo").append("<div class='alert alert-warning'><strong> " + username + " : </strong> " + event.results[i][0].transcript  + "</div>");
 								
 								} else {
-									$("#divLogInfo").append(event.results[i][0].transcript);
+									$("#divLogInfo").append("<div class='alert alert-warning'><strong> " + username + " : </strong> " + event.results[i][0].transcript  + "</div>");
 								}
 								console.log("Voice detected.");
 							}
@@ -129,8 +131,7 @@
 						$('button').click(function(){
 						
 							//get id of element: fname or sname
-							var name = $(this).attr('id');
-							name = name.substring(10,15);
+							var name = "Fname"
 						
 							// display name
 							var uName = $("#txt_" + name).val();
@@ -143,6 +144,8 @@
 							
 							// Participant Successfully Added
 							$("#divLogInfo").append("<div class='alert alert-success'> <strong>" + uName +" </strong>  has joined the conversation.... </div>");
+							iosocket.send("<div class='alert alert-success'> <strong>" + uName +" </strong>  has joined the conversation.... </div>");
+
 							console.log("Call: " + $(this).attr('id'));	
 
 							// Disable Textbox and button
@@ -180,7 +183,6 @@
 						log.textContent = '';
 						});
 					}
-					
 					
 		});
 	</script>
